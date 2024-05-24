@@ -1,0 +1,508 @@
+Bruno Galleguillos
+Rut: 20.107.651-k
+
+---
+title: "TAREA_2"
+output: html_notebook
+---
+
+
+
+
+#Bruno Galleguillos
+#RUT: 20.107.651-k
+
+```{r}
+
+library(tidyverse, quietly = T)
+library("ggpubr")
+library("corrplot")
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+```
+
+
+# A,B y C pendiente
+```{r}
+
+# a.	Establezca un objetivo general para el estudio según la información que se describe sobre los casos de coronavirus. 
+#     Sea claro del por qué este objetivo es relevante para la investigación. (2 ptos)
+
+### Respuesta: Evaluar que los niños tienen mas probabilidades de recuperarse frente a un adulto mayor. 
+
+
+# b.	Establezca una hipótesis para el estudio, formúlela usando estructura de hipótesis (declarando hipótesis nula e hipótesis alternativa). (2 ptos)
+
+### Respuesta: H0: Los niños afectados por covid-19 no presentan mayor casos de recuperación que en adultos mayores.
+
+
+###            H1: Los niños afectados por covid-19 presentan mayor casos de recuperación qeu en adultos mayores.
+
+
+# c.	Busque literatura asociada a la hipótesis planteada. ¿Qué se dice al respecto? Referencie dos documentos al menos.( 2 ptos)
+
+
+```
+
+# 1er Estudio:
+
+"Características clínicas y epidemiológicas de pacientes con COVID-19 en Colombia: un análisis multicéntrico" (2020)
+
+Este estudio multicéntrico colombiano encontró que los niños tenían una tasa de recuperación del COVID-19 significativamente mayor que los adultos mayores. Entre los niños, solo el 0,3% requirió UCI, mientras que entre los adultos mayores este número fue del 13,8%. La tasa de mortalidad también fue mucho más alta en adultos mayores (22,1%) que en niños (0%).
+
+Cita APA: Gutiérrez-Osorio, F., Prieto, J. H., Ruiz-López, S., Sarria, D. A., Peñuela, A. F., Medina, M. F., . . . & Iregui, M. (2020). Características clínicas y epidemiológicas de pacientes con COVID-19 en Colombia: un análisis multicéntrico. Revista de Salud Pública, 49(2), 1-11.
+
+
+# 2do Estudio:
+
+"Análisis de la severidad del COVID-19 en población pediátrica en Colombia: experiencia de un hospital de alta complejidad" (2021)
+
+Este estudio realizado en un hospital de alta complejidad en Colombia también encontró que los niños tenían una tasa de recuperación del COVID-19 significativamente mayor que los adultos mayores. Ningún niño en el estudio requirió ventilación mecánica, mientras que el 12,5% de los adultos mayores la requirieron. La tasa de mortalidad también fue mucho más baja en niños (0%) que en adultos mayores (6,3%).
+
+Cita APA: Garavito-Moncada, J. D., Sierra-Escobar, A. F., Villamil-Fontanilla, F., Aya-Villamizar, M. C., & Gutiérrez-Osorio, F. (2021). Análisis de la severidad del COVID-19 en población pediátrica en Colombia: experiencia de un hospital de alta complejidad. Revista de la Sociedad Colombiana de Pediatría, 52(2), 137-143.
+
+
+
+#Cargar la Base
+```{r}
+
+setwd("D:\Proyectos R\Tarea 2")
+read.csv("datos_covid.csv",fileEncoding='latin1',check.names=F)
+
+dc <- datos_covid
+rm(datos_covid)
+
+```
+
+
+# D
+```{r}
+
+# d.	¿Cuáles son las dimensiones de la base de datos? ¿Cuál es el formato de cada variable? ¿El formato de las variables es el correcto? Corrija los formatos de variables que no sean los correctos (3 ptos) 
+
+str(dc)
+### Las dimensiones de la base de datos son: 502010 obs. of  24 variables.
+
+# El formato de las variables es el correcto, salvo por el país y el codigo del pais que son constantes para todas las obs. 
+
+```
+
+
+# Cambio de nombre de las variables.
+```{r}
+
+colnames(dc)[which(names(dc) == "ID de caso")] <- "ID_caso"
+colnames(dc)[which(names(dc) == "Fecha de notificación")] <- "Fecha_notificacion"
+colnames(dc)[which(names(dc) == "Código DIVIPOLA departamento")] <- "Codigo_departamento"
+colnames(dc)[which(names(dc) == "Nombre departamento")] <- "Nombre_departamento"
+colnames(dc)[which(names(dc) == "Código DIVIPOLA municipio")] <- "Codigo_municipio"
+colnames(dc)[which(names(dc) == "Nombre municipio")] <- "Nombre_municipio"
+colnames(dc)[which(names(dc) == "Unidad de medida de edad")] <- "Unidad_de_medida_de_edad"
+colnames(dc)[which(names(dc) == "Tipo de contagio")] <- "Tipo_de_contagio"
+colnames(dc)[which(names(dc) == "Ubicación del caso")] <- "Ubicacion_del_caso"
+colnames(dc)[which(names(dc) == "Código ISO del país")] <- "Codigo_iso_pais"
+colnames(dc)[which(names(dc) == "Nombre del país")] <- "nombre_pais"
+colnames(dc)[which(names(dc) == "Fecha de inicio.de.síntomas")] <- "Fecha_sintomas"
+colnames(dc)[which(names(dc) == "Fecha de muerte")] <- "Fecha_muerte"
+colnames(dc)[which(names(dc) == "Fecha de diagnóstico")] <- "Fecha_diagnostico"
+colnames(dc)[which(names(dc) == "Fecha de recuperación")] <- "Fecha_recuperacion"
+colnames(dc)[which(names(dc) == "Tipo de recuperación")] <- "Tipo_recuperacion"
+colnames(dc)[which(names(dc) == "Pertenencia étnica")] <- "Pertenencia_etnica"
+colnames(dc)[which(names(dc) == "Nombre del grupo.étnico")] <- "Nombre_del_grupo_etnico"
+colnames(dc)[which(names(dc) == "fecha de nacimiento")] <- "Fecha_nacimiento"
+colnames(dc)[which(names(dc) == "Fecha de inicio de síntomas")] <- "Fecha_de_sintomas"
+```
+
+```{r}
+dc$fecha_reporte_web <- as.character(substring(dc$fecha_reporte_web, 1,10))
+dc$Fecha_notificacion <- as.character(substring(dc$Fecha_notificacion, 1,10))
+dc$Fecha_diagnostico <- as.character(substring(dc$Fecha_diagnostico, 1,10))
+```
+
+# E **REVISAR**
+```{r}
+
+# e.	¿Las variables categóricas presentan valores mal escritos? Corrija los valores de ser necesario. (2 ptos)
+
+# Variables categoricas:
+
+# "Unidad_de_medida_de_edad"
+# "Sexo"
+# "Tipo_de_contagio"
+# "Ubicacion_del_caso"
+# "Estado"
+# "Recuperado"
+# "Tipo_recuperacion"
+# "Pertenencia_etnica"
+
+
+print(unique(dc$"Unidad_de_medida_de_edad"))
+print(unique(dc$"sexo"))
+print(unique(dc$"Tipo_de_contagio"))
+print(unique(dc$"Ubicacion_del_caso"))
+print(unique(dc$"Estado"))
+print(unique(dc$"Recuperado"))
+print(unique(dc$"Tipo_recuperacion"))
+print(unique(dc$"Pertenencia_etnica"))
+
+#> print(unique(dc$"Unidad_de_medida_de_edad"))
+#[1] 1 2 3
+# NO SE PRESENTA ERROR EN ESTA VARIABLE.
+
+#> print(unique(dc$"sexo"))
+#[1] "M" "F" "m"
+# AQUISE REPITE LA VARIABLE "m" CUANDO DEBIESE SER "M".
+
+#> print(unique(dc$"Tipo_de_contagio"))
+#[1] "Comunitaria" "Relacionado" "Importado" 
+# NO SE PRESENTA ERROR EN ESTA VARIABLE.
+
+#> print(unique(dc$"Ubicacion_del_caso"))
+#[1] "Casa"         "Fallecido"    "N/A"          "casa"         "Hospital"     "Hospital UCI"
+# SE OBSERVA "Casa" TAMBIEN  COMO "casa".
+
+#> print(unique(dc$"Estado"))
+#[1] "Leve"      "Fallecido" "N/A"       "leve"      "Moderado"  "Grave"  
+# SE OBSERVA "Leve" TAMBIEN COMO "leve".
+
+#> print(unique(dc$"Recuperado"))
+#[1] "Recuperado" "Fallecido"  "N/A"        "Activo"     "fallecido"
+# AQUI SE OBSERVA "Fallecido" TAMBIEN COMOM "fallecido".
+
+#> print(unique(dc$"Tipo_recuperacion"))
+#[1] "Tiempo" "PCR"    NA
+# NO SE OBSERVA ERROR.
+
+#> print(unique(dc$"Pertenencia_etnica"))
+#[1]  6  1  5 NA  3  2
+# NO SE OBSERVA ERROR.
+
+```
+#Corrección de variables
+```{r}
+
+dc$sexo[dc$sexo == "m"] <- "M"
+dc$Ubicacion_del_caso[dc$Ubicacion_del_caso == "casa"] <- "Casa"
+dc$Estado[dc$Estado == "leve"] <- "Leve"
+dc$Recuperado[dc$Recuperado == "fallecido"] <- "Fallecido"
+
+```
+
+#Revisión de correciones
+
+```{r}
+print(unique(dc$"sexo"))
+print(unique(dc$"Ubicacion_del_caso"))
+print(unique(dc$"Estado"))
+print(unique(dc$"Recuperado"))
+
+```
+
+
+
+```{r}
+for(n in 1:nrow(dc)) {
+  dc[n, "sexo"]
+  if(dc[n,"sexo"]== "M"){
+    dc[n,"sexo"] <- "Masculino"
+  }
+  if(dc[n,"sexo"]== "F"){
+    dc[n,"sexo"] <- "Femenino"
+  }
+}  
+```
+
+
+# F para datos_covid
+```{r}
+# f.	Cambie las variables categóricas, cuyas categorías están representadas por números y deje el nombre de la categoría correspondiente (3 ptos)
+
+#Pertenencia étnica
+
+#1-Indígena 2-ROM 3-Raizal 4-Palenquero 5-Negro 6-Otro
+
+dc$Pertenencia_etnica <- as.character(dc$Pertenencia_etnica)
+
+dc$Pertenencia_etnica <- recode(dc$Pertenencia_etnica,
+   '1' = 'Indigena',
+   '2' = 'ROM',
+   '3' = 'Raizal',
+   '4' = 'Palenquero',
+   '5' = 'Negro',
+   '6' = 'Otro',
+   .default = NA_character_)
+
+
+
+#Unidad de medida de edad
+
+#1-Años  2-Meses 3-Días
+
+dc$"Unidad_de_medida_de_edad"<- as.character(dc$"Unidad_de_medida_de_edad")
+for(n in 1:nrow(dc)) {
+  dc[n, "Unidad_de_medida_de_edad"]
+  if(dc[n,"Unidad_de_medida_de_edad"]== "1"){
+    dc[n,"Unidad_de_medida_de_edad"] <- "Años"
+  }
+  if(dc[n,"Unidad_de_medida_de_edad"]== "2"){
+    dc[n,"Unidad_de_medida_de_edad"] <- "Meses"
+  }
+  if(dc[n,"Unidad_de_medida_de_edad"]== "3"){
+    dc[n,"Unidad_de_medida_de_edad"] <- "Días"
+  }
+}
+
+
+
+
+
+```
+
+
+
+
+# G
+```{r}
+# g.	La base de datos contiene errores, se cambió la palabra “residencia” por la palabra “casa”, la palabra “Extranjero” por la palabra “importado”, la palabra “Aislamiento” por la palabra “Tiempo”. Por lo tanto, se le solicita que corrija estos errores (3 ptos)
+
+for(n in 1:nrow(dc)) {
+  dc[n, "Ubicacion_del_caso"]
+  if(dc[n,"Ubicacion_del_caso"]== "Casa"){
+    dc[n,"Ubicacion_del_caso"] <- "residencia"
+  }
+}
+
+
+for(n in 1:nrow(dc)) {
+  dc[n, "Tipo_de_contagio"]
+  if(dc[n, "Tipo_de_contagio"]== "Imporado"){
+    dc[n, "Tipo_de_contagio"] <- "Extranjero"
+  }
+}
+
+
+for(n in 1:nrow(dc)) {
+  # Verificar si "Recuperación" contiene un valor ausente
+  if (!is.na(dc[n, "Tipo_recuperacion"])) {
+    if (dc[n, "Tipo_recuperacion"] == "Tiempo") {
+      dc[n, "Tipo_recuperacion"] <- "Aislamiento"
+    }
+  }
+}
+
+```
+
+
+
+
+# H
+```{r}
+# h.	Cree una variable que sea la edad del paciente cuando comenzaron los síntomas de covid-19. (2 ptos)
+
+
+dc <- dc%>% mutate(Edad_sintomas = as.integer(substr(dc$Fecha_de_sintomas, 1, 4)) - `Fecha_nacimiento`)
+
+
+
+```
+
+
+
+
+# I
+
+```{r}
+#i.	Cree la variable de nombre “grupo_etario” que considere los siguientes rangos (2 ptos):
+
+#•	0-5 años: Infante
+#•	6-11 años: Niño
+#•	12-18 años: Adolescente 
+#•	19-26 años: Joven
+#•	27-59 años: Adulto
+#•	60 o más: Adulto mayor
+
+dc$"Grupo_etario" <- as.Date(dc$"Edad")
+
+
+# Clasificar los grupos de edad según los umbrales (vectorizado)
+breaks <- c(0, 5, 11, 18, 26, 59, Inf)
+labels <- c("Infante", "Niño", "Adolescente", "Joven", "Adulto", "Adulto mayor")
+dc$Grupo_etario <- cut(dc$"Edad", breaks = breaks, labels = labels)
+
+
+```
+
+
+# J TERMINAR
+```{r}
+
+# j.	 Presente en un gráfico las cifras de fallecidos por covid-19. Reporte solo el número de fallecidos hombres por grupo etario para el año 2021 (2 ptos)
+
+dc$Fecha_muerte <- as.character(substring(dc$Fecha_muerte, 1,10))
+
+grafico1 = dc %>% filter(sexo == "M") %>% filter(substr(Fecha_muerte, 1, 4) == "2021") %>% group_by(Grupo_etario) %>% summarise( numero_fallecidos = n())
+
+ggplot(grafico1,aes(x = Grupo_etario, y = numero_fallecidos)) + 
+  geom_col()
+
+
+```
+
+
+
+# K
+```{r}
+
+# k.	La base de datos presenta otro error, los datos de fecha de muerte y recuperación de las personas entre 30 y 35 años registrados el día 2 de marzo de 2021 debían ser registrados el día 2 de marzo de 2020. ¿Cuántos caso se corrigieron? (3 puntos)
+
+rm(casos_corregir)
+
+casos_corregir <- dc %>%
+  filter(
+    Edad >= 30 & Edad <= 35,
+    Fecha_muerte == as.Date("2021-03-02") | Fecha_recuperacion == as.Date("2021-03-02")
+  )
+
+nrow(casos_corregir)
+
+```
+
+
+```{r}
+#Corregir fecha de muerte
+dc$Fecha_muerte <- ifelse(
+  dc$Edad >= 30 & dc$Edad <= 35 & dc$Fecha_muerte == as.Date("2021-03-02"),
+  as.Date("2020-03-02"),
+  dc$Fecha_muerte
+)
+
+```
+
+```{r}
+#corregir fecha de recuperación
+
+dc$Fecha_recuperacion <- ifelse(
+  dc$Edad >= 30 & dc$Edad <= 35 & dc$Fecha_recuperacion == as.Date("2021-03-02"),
+  as.Date("2020-03-02"),
+  dc$Fecha_recuperacion
+)
+```
+
+
+
+# L
+```{r}
+
+# l.	Genere 4 visualizaciones con las variables que usted estime conveniente para apoyar el objetivo de estudio y/o testear las hipótesis planteadas. Además, explique los resultados obtenidos en cada gráfico y agregue nombres a los ejes, titulo y leyenda. (6 ptos)
+
+dc$Fecha_recuperacion <- as.Date(dc$Fecha_recuperacion)
+
+dc_t <- dc %>%
+  filter(!is.na(Grupo_etario), year(Fecha_muerte) == 2020)
+
+
+casos_grupo_etario <- dc_t %>%
+  group_by(Grupo_etario) %>%
+  summarise(num_casos = n()) %>%
+  arrange(match(Grupo_etario, c("Infante", "Niño", "Adolescente", "Joven", "Adulto", "Adulto mayor")))
+
+ggplot(casos_grupo_etario, aes(x = Grupo_etario, y = num_casos, fill = Grupo_etario)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Grupo Etario", y = "Número de Casos",
+       title = "Casos Fallecidos por Grupo Etario en 2020",
+       fill = "Grupo Etario") +
+  theme_minimal()
+
+
+```
+# El gráfico de "Casos Fallecidos por Grupo Etario en 2020" muestra en apoyo a la hipótesis. se Observa que la mayor concentración de casos fallecidos se presenta en el grupo etario de "Adulto Mayor". Concluyendo que los adultos mayores tienen peor recuperación o nula recuperación frente a los niños. 
+
+```{r}
+
+dc_t1 <- dc %>%
+  filter(!is.na(Grupo_etario), year(fecha_reporte_web) >= 2020 & year(fecha_reporte_web) <= 2023)
+
+grupo_etario_y_año <- dc_t1 %>%
+  group_by(Grupo_etario, año = year(fecha_reporte_web)) %>%
+  summarise(num_casos = n()) %>%
+  arrange(match(Grupo_etario, c("Infante", "Niño", "Adolescente", "Joven", "Adulto", "Adulto mayor")))
+
+ggplot(grupo_etario_y_año, aes(x = año, y = num_casos, color = Grupo_etario)) +
+  geom_line() +
+  labs(x = "Año", y = "Número de Casos",
+       title = "Flujo de casos entre 2020 y 2023",
+       color = "Grupo Etario") +
+  theme_minimal()
+
+
+```
+El gráfico "Flujo de casos entre 2020 y 2023" entrega información respecto al flujo de ingreso de pacientes entre los años 2020 y 2023. Dónde la mayor concentración se presenta entre "Adultos", "Jovenes" y Adultos Mayores". Desmostrando y concluyendo que el ingreso de "Niños" es menor en cada año del estudio.
+
+
+
+```{r}
+
+dc_t2 <- dc %>%
+  filter(!is.na(Grupo_etario), !is.na(Estado), year(fecha_reporte_web) == 2020)
+
+Estado_y_grupo_etario <- dc_t2 %>%
+  group_by(Grupo_etario, Estado) %>%
+  summarise(num_casos = n()) %>%
+  arrange(match(Grupo_etario, c("Infante", "Niño", "Adolescente", "Joven", "Adulto", "Adulto mayor")))
+
+ggplot(Estado_y_grupo_etario, aes(x = Grupo_etario, y = num_casos, fill = Estado)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs(x = "Grupo Etario", y = "Número de Casos",
+       title = "Distribución de Casos por Estado y Grupo Etario en 2020",
+       fill = "Estado") +
+  theme_minimal()
+
+
+```
+
+El gráfico "Distribución de Casos por Estado y Grupo Etario en 2020" entrega información sobre el estado de los grupos etarios respecto al covid-19. Dónde el "Estado" "Leve se presenta en l amayoría de casos, exceptuando en "Adulto Mayor" y "Adulto" sobresaliendo el "Estado" "Fallecido" sobre el "Estado" "leve". Comcluyendo que los demas grupos etarios tienden a tener una mejor recuperación frente al covid-19, apoyando la hipótesis planteada.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
